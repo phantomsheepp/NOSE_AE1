@@ -39,11 +39,11 @@ while True:
         cli_sock, cli_addr = srv_sock.accept()
         print(f"Client {cli_addr} connected.")
 
-        client_data = receive_data(cli_sock, cli_addr)
-        """client_data = cli_sock.recv(4096)
+        #client_data = receive_data(cli_sock, cli_addr)
+        client_data = cli_sock.recv(4096)
         print(client_data)
-        second_data = cli_sock.recv(4096)
-        print(second_data)"""
+        #second_data = cli_sock.recv(4096)
+        #print(second_data)
 
         # Parse request
         choice_list = client_data.decode().split(" ")
@@ -82,9 +82,10 @@ while True:
 
             # Check if file already exists
             if filename in os.listdir(): 
+                cli_sock.sendall(str.encode("Upload failed as file already exists."))
                 raise Exception(f"File {filename} failed to download from the client {cli_addr} as that file already exists.")
             else:
-                recv_file(cli_sock, filename, file_contents, cli_addr)
+                recv_file(cli_sock, filename, cli_addr)
                 print(f"File {filename} successfully download to the server {hostname}:{port}.")
 
 

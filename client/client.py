@@ -78,10 +78,13 @@ try:
         if filename not in os.listdir():
             raise Exception(f"File {filename} failed to upload to the server {hostname}:{port} as it was not found.")
         else:
-            file_contents = receive_data(cli_sock, srv_addr).decode()
             
-            cli_sock.sendall(str.encode(f"{choice} {filename} "))
-            send_file(cli_sock, filename, file_contents, srv_addr)
+            cli_sock.sendall(str.encode(f"{choice} {filename}"))
+            print("Hey")
+            send_file(cli_sock, filename, srv_addr)
+
+            result = cli_sock.recv(4096)
+            print(result.decode())
             
 # Catchall exception in case of larger error
 except Exception as e:
