@@ -12,7 +12,11 @@ srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
 try:
-    hostname = "0.0.0.0" #ip Address we were told to use in specification
+
+    # "0.0.0.0" means all IP addresses so it can recieve messages at port number on all interfaces/addresses
+    hostname = "0.0.0.0"
+
+    #takes the port argument from the command line
     port = int(sys.argv[1])
  
     # Binding server to user defined port number
