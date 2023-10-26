@@ -4,8 +4,8 @@ import os
 import time 
 
 sys.path.append('..')
-from shared_process import send_file, recv_file
-sys.path.append('server')
+from shared_process import send_file, recv_file, recv_listing
+sys.path.append('client')
 
 # Create the client socket used to connect to the server
 cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -39,7 +39,9 @@ try:
         directory_list = data.decode()
         print("\nContents of directory: ")
         print(directory_list)
-        print(f"First level directory contents from the server {hostname}:{port} successfully returned to client.")
+        print(f"\nFirst level directory contents from the server {hostname}:{port} successfully returned to client.")
+
+        #recv_listing(cli_sock)
 
 
     # Request to download a file
@@ -49,13 +51,12 @@ try:
 
         # Check if file exists
         if filename in os.listdir():
-            raise Exception(f"File {filename} failed to download from the server {hostname}:{port} as it was not found.")
+            raise Exception(f"File {filename} failed to download from the server {hostname}:{port} as it already exists.")
         else:
             cli_sock.sendall(str.encode(f"{choice} {filename}"))
             time.sleep(1)
-            recv_file(cli_sock, filename)
-            print(f"File {filename} successfully downloaded from the server {hostname}:{port}.")
-
+            recv_file(cli_sock, filename, srv_addr)
+            
     # Request to upload a file
     elif choice == "put":
 
@@ -63,13 +64,11 @@ try:
 
         # Check if file already exists
         if filename not in os.listdir():
-            raise Exception(f"File {filename} failed to upload to the server {hostname}:{port} as that file already exists.")
+            raise Exception(f"File {filename} failed to upload to the server {hostname}:{port} as it was not found.")
         else:
             cli_sock.sendall(str.encode(f"{choice} {filename} "))
-            time.sleep(1)
-            send_file(cli_sock, filename)
-            print(f"File {filename} successfully uploaded to the server {hostname}:{port}.")
-
+            send_file(cli_sock, filename, srv_addr)
+            
 # Catchall exception in case of larger error
 except Exception as e:
     print(e)

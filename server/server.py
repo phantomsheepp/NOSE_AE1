@@ -3,7 +3,7 @@ import sys
 import os
 
 sys.path.append('..')
-from shared_process import send_file, recv_file
+from shared_process import send_file, recv_file, send_listing
 sys.path.append('server')
  
 # Creating TCP server socket
@@ -26,9 +26,8 @@ try:
     print(f"Server up and running on {hostname}:{port}")
 
     # Wait for client connections
-    srv_sock.listen(5) #the number is how many clients can interact with server (starting
-    #with 0) not sure how many the specification actually wants, couldn't see anything
-
+    srv_sock.listen(5) 
+    
 except Exception as e:
     # Print the exception message
     print(e)
@@ -37,7 +36,6 @@ except Exception as e:
 
 while True:
     try:
-
         # Connect client's socket and address to server
         cli_sock, cli_addr = srv_sock.accept()
         print(f"Client {cli_addr} connected.")
@@ -56,7 +54,9 @@ while True:
             dir_contents_list = os.listdir()
             dir_contents_str = "\n".join(dir_contents_list)
             cli_sock.sendall(str.encode(dir_contents_str))
-            print(f"First level directory contents from the server {hostname}:{port} successfully returned to client.")
+            print(f"First level directory contents from the server successfully returned to client {cli_addr}.")
+
+            #send_listing(cli_sock)
 
         # "get" argument downloads file
         elif choice == "get":
@@ -64,10 +64,10 @@ while True:
 
             # Check if file exists
             if filename not in os.listdir():  
-                raise Exception(f"File {filename} failed to download from the server {hostname}:{port} as it was not found.")
+                raise Exception(f"File {filename} failed to send to the client {cli_addr} as it was not found.")
             else:
-                send_file(cli_sock, filename)
-                print(f"File {filename} successfully downloaded from the server {hostname}:{port}.")
+                send_file(cli_sock, filename, cli_addr)
+                print(f"File {filename} successfully sent to the client {cli_addr}.")
 
         # "put" argument uploads file
         elif choice == "put":
@@ -75,10 +75,10 @@ while True:
 
             # Check if file already exists
             if filename in os.listdir(): 
-                raise Exception(f"File {filename} failed to upload to the server {hostname}:{port} as that file already exists.")
+                raise Exception(f"File {filename} failed to download from the client {cli_addr} as that file already exists.")
             else:
-                recv_file(cli_sock, filename)
-                print(f"File {filename} successfully uploaded to the server {hostname}:{port}.")
+                recv_file(cli_sock, filename, cli_addr)
+                print(f"File {filename} successfully download to the server {hostname}:{port}.")
 
 
     # Catchall exception in case of larger error
@@ -87,7 +87,9 @@ while True:
 
     # Close client connection
     finally:
-        cli_sock.close()
+        # Ensures a client socket exists before closing it
+        if "cli_sock" in locals():
+            cli_sock.close()
 
 srv_sock.close()
 exit(0)
