@@ -50,7 +50,7 @@ while True:
             
         elif choice == "put":
             filename = str(choice_list[1])
-            
+
             if filename in os.listdir(): # Check if file exists
                 raise Exception("File already exists")
             else:

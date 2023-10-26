@@ -1,6 +1,7 @@
 import socket
 import sys
 import os
+import time 
 
 sys.path.append('..')
 from shared_process import send_file, recv_file
@@ -9,7 +10,6 @@ sys.path.append('server')
 # Create the socket with which we will connect to the server
 cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-# The server's address is a tuple, comprising the server's IP address or hostname, and port number
 hostname = str(sys.argv[1])
 port = int(sys.argv[2])
 choice = str(sys.argv[3])
@@ -31,7 +31,7 @@ try:
 
         cli_sock.sendall(str.encode(choice))
 
-        data = cli_sock.recv(1024)
+        data = cli_sock.recv(4096)
         directory_list = data.decode()
         print("\nContents of directory: ")
         print(directory_list)
@@ -43,16 +43,17 @@ try:
             raise Exception("File already exists")
         else:
             cli_sock.sendall(str.encode(f"{choice} {filename}"))
+            time.sleep(1)
             recv_file(cli_sock, filename)
 
     elif choice == "put":
 
         filename = sys.argv[4]
-        print(filename)
         if filename not in os.listdir():
             raise Exception("File doesn't exist")
         else:
             cli_sock.sendall(str.encode(f"{choice} {filename} "))
+            time.sleep(1)
             send_file(cli_sock, filename)
 
 except Exception as e:
