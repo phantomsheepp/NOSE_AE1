@@ -40,23 +40,30 @@ while True:
         cli_sock, cli_addr = srv_sock.accept()
         print(f"Client {cli_addr} connected.")
 
-        data = cli_sock.recv(4096)
+        client_data = bytearray()
+        while True:
+            data = cli_sock.recv(1024)
+            if data: 
+                client_data += data
+            if not data or len(data) < 1024:
+                break
 
         # Parse request
-        choice_list = data.decode().split(" ")
+        choice_list = client_data.decode().split(" ")
         choice = str(choice_list[0])
+        print(choice_list)
+
+        if choice in ["get", "put"]:
+            filename = str(choice_list[1])
+
+            file_contents = "".join(choice[2:])
+            print("yuh"+file_contents)
 
         # Serve requests "list", "get", or "put" as given by client argument
 
         # "list" argument requests a list of first level directory contents
         if choice == "list":
-            # Retrieve directory contents and convert into correct format
-            dir_contents_list = os.listdir()
-            dir_contents_str = "\n".join(dir_contents_list)
-            cli_sock.sendall(str.encode(dir_contents_str))
-            print(f"First level directory contents from the server successfully returned to client {cli_addr}.")
-
-            #send_listing(cli_sock)
+            send_listing(cli_sock, cli_addr)
 
         # "get" argument downloads file
         elif choice == "get":

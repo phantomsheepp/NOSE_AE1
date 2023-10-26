@@ -46,6 +46,7 @@ def send_listing(socket, addr):
     try:
         dir_contents_list = os.listdir()
         dir_contents_str = "\n".join(dir_contents_list)
+        print(dir_contents_str)
         socket.sendall(str.encode(dir_contents_str))
         print(f"First level directory contents from the server successfully returned to client {addr}.")
 
@@ -55,13 +56,14 @@ def send_listing(socket, addr):
         print(f"First level directory contents from the server unsuccessfully sent to client {addr}.")    
 
 # Recieve listing from server via provided socket and print it
-def recv_listing(socket):
+def recv_listing(socket, addr):
     try:
-        dir_listing = socket.recv(4096)
-        dir_listing = "\n".join(dir_listing)
+        data = socket.recv(4096)
+        directory_list = data.decode()
         print("\nContents of directory: ")
-        print(dir_listing)
-        print(f"\nFirst level directory contents from the server {hostname}:{port} successfully returned to client.")
+        print(directory_list)
+        print(f"\nFirst level directory contents from the server {addr} successfully returned to client.")
 
     except Exception as e:
-            print(e)
+        print(e)
+        print(f"First level directory contents from the server unsuccessfully sent to client {addr}.")    

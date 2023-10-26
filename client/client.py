@@ -15,6 +15,13 @@ hostname = str(sys.argv[1])
 port = int(sys.argv[2])
 choice = str(sys.argv[3])
 
+# Check for valid choice input
+if choice not in ["list", "get", "put"]:
+    raise Exception("Request not valid - please input list, get, or put")
+
+if (choice in ["get", "put"]) and (len(sys.argv) != 5):
+    raise IndexError("No file name given.")
+
 srv_addr = (hostname, port) 
 
 # Connect to server defined in command line 
@@ -32,17 +39,8 @@ try:
 
     # Request a list of first level directory contents
     if choice == "list":
-
         cli_sock.sendall(str.encode(choice))
-
-        data = cli_sock.recv(4096)
-        directory_list = data.decode()
-        print("\nContents of directory: ")
-        print(directory_list)
-        print(f"\nFirst level directory contents from the server {hostname}:{port} successfully returned to client.")
-
-        #recv_listing(cli_sock)
-
+        recv_listing(cli_sock, srv_addr)
 
     # Request to download a file
     elif choice == "get":
@@ -54,7 +52,6 @@ try:
             raise Exception(f"File {filename} failed to download from the server {hostname}:{port} as it already exists.")
         else:
             cli_sock.sendall(str.encode(f"{choice} {filename}"))
-            time.sleep(1)
             recv_file(cli_sock, filename, srv_addr)
             
     # Request to upload a file
