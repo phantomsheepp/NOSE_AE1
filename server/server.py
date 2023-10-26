@@ -13,19 +13,19 @@ srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 try:
 
-    # "0.0.0.0" means all IP addresses so it can recieve messages at port number on all interfaces/addresses
+    # "0.0.0.0" used as means all IP addresses so we can recieve messages at port number on all interfaces/addresses
     hostname = "0.0.0.0"
 
-    #takes the port argument from the command line
+    # Take the port argument from the command line
     port = int(sys.argv[1])
  
-    # Binding server to user defined port number
+    # Bind server to user defined port number
     srv_sock.bind((hostname, port))
 
-    # Reporting success
+    # Report success
     print(f"Server up and running on {hostname}:{port}")
 
-    # Waiting for client connections
+    # Wait for client connections
     srv_sock.listen(5) #the number is how many clients can interact with server (starting
     #with 0) not sure how many the specification actually wants, couldn't see anything
 
@@ -38,17 +38,17 @@ except Exception as e:
 while True:
     try:
 
-        # Connecting client's socket and address to server
+        # Connect client's socket and address to server
         cli_sock, cli_addr = srv_sock.accept()
         print(f"Client {cli_addr} connected.")
 
         data = cli_sock.recv(4096)
 
-        # Parsing request
+        # Parse request
         choice_list = data.decode().split(" ")
         choice = str(choice_list[0])
 
-        # Serving requests "list", "get", or "put" as given by client argument
+        # Serve requests "list", "get", or "put" as given by client argument
 
         # "list" argument requests a list of first level directory contents
         if choice == "list":
@@ -73,7 +73,7 @@ while True:
         elif choice == "put":
             filename = str(choice_list[1])
 
-            # Check if file exists
+            # Check if file already exists
             if filename in os.listdir(): 
                 raise Exception(f"File {filename} failed to upload to the server {hostname}:{port} as that file already exists.")
             else:
