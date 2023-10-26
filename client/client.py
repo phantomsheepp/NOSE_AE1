@@ -4,23 +4,36 @@ import os
 import time 
 
 sys.path.append('..')
-from shared_process import send_file, recv_file, recv_listing
+from shared_process import send_file, recv_file, recv_listing, receive_data
 sys.path.append('client')
 
 # Create the client socket used to connect to the server
 cli_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-# Parses arguments from the command line
-hostname = str(sys.argv[1])
-port = int(sys.argv[2])
-choice = str(sys.argv[3])
-
-srv_addr = (hostname, port) 
-
-# Connect to server defined in command line 
+# Processing all command line input
 try:
+    # Parses arguments from the command line
+    hostname = str(sys.argv[1])
+    port = int(sys.argv[2])
+    choice = str(sys.argv[3])
+
+    # Check for valid choice input
+    if choice not in ["list", "get", "put"]:
+        raise Exception("Request not valid - please input list, get, or put")
+    
+    if (choice in ["get", "put"]) and (len(sys.argv) != 5):
+        raise IndexError("No file name given.")
+
+    srv_addr = (hostname, port) 
+
+    # Connect to server defined in command line
     cli_sock.connect(srv_addr)
-    print(f"Client connected to server on {hostname}:{port}")
+    print(f"Client connected to server on {hostname}:{port}.")
+
+except IndexError as e:
+    print("Incorrect number of arguments given.")
+    print(e)
+    exit(1)
 
 except Exception as e:
     print(e)
@@ -54,7 +67,6 @@ try:
             raise Exception(f"File {filename} failed to download from the server {hostname}:{port} as it already exists.")
         else:
             cli_sock.sendall(str.encode(f"{choice} {filename}"))
-            time.sleep(1)
             recv_file(cli_sock, filename, srv_addr)
             
     # Request to upload a file
@@ -66,8 +78,10 @@ try:
         if filename not in os.listdir():
             raise Exception(f"File {filename} failed to upload to the server {hostname}:{port} as it was not found.")
         else:
+            file_contents = receive_data(cli_sock, srv_addr).decode()
+            
             cli_sock.sendall(str.encode(f"{choice} {filename} "))
-            send_file(cli_sock, filename, srv_addr)
+            send_file(cli_sock, filename, file_contents, srv_addr)
             
 # Catchall exception in case of larger error
 except Exception as e:

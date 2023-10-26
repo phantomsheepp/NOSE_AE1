@@ -18,18 +18,18 @@ def send_file(socket, filename, addr):
 
 
 # Create file with given filename and write to it data received via provided socket
-def recv_file(socket, filename, addr):
+def recv_file(socket, filename, contents, addr):
     try:
-        file_contents = bytearray()
+        """file_contents = bytearray()
         data = socket.recv(4096)
         file_contents += data
 
         while len(data) > 0:
             data = socket.recv(4096)
-            file_contents += data
+            file_contents += data"""
 
         with open(filename,"xb") as file:
-            file.write(file_contents)
+            file.write(str.encode(contents))
 
         print(f"File {filename} successfully downloaded from {addr}.")
 
@@ -40,6 +40,43 @@ def recv_file(socket, filename, addr):
         print(e)
         print(f"File {filename} failed to download from {addr}.")
 
+
+def receive_data(socket, addr):
+    try:
+        """file_contents = bytearray()
+        data = socket.recv(4096)
+        file_contents += data
+
+        while len(data) > 0:
+            data = socket.recv(4096)
+            file_contents += data"""
+
+        received_data = bytearray()
+
+        print("HI")
+        while True: 
+            print("NO")
+            data = socket.recv(4096)
+            print("WADDUOP")
+            print(data)
+
+            if not data:
+                break
+
+            received_data += data
+        
+        return received_data
+        
+    
+    except BrokenPipeError:
+        print(f"Connection broken to {addr} so download failed.")
+
+    except Exception as e:
+        print(e)
+        print(f"Failed to receive data.")
+
+    return None
+        
 
 # Generate and send directory listing from server to client via provided socket
 def send_listing(socket, addr):
