@@ -3,36 +3,39 @@ import sys
 import os
 
 sys.path.append('..')
-from shared_process import send_file, recv_file, send_listing
+from shared_process import send_file, recv_file, send_listing, status_message
 sys.path.append('server')
  
+
+############# CONNECTION TO SERVER #############
+
+
 # Creating TCP server socket
 srv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 
-
-
 try:
-
     # "0.0.0.0" used as means all IP addresses so we can recieve messages at port number on all interfaces/addresses
     hostname = "0.0.0.0"
 
-    # Take the port argument from the command line
+    # Takes the port argument from the command line
     port = int(sys.argv[1])
  
-    # Bind server to user defined port number
+    # Binds server to user defined port number
     srv_sock.bind((hostname, port))
 
-    # Report success
     print(f"Server up and running on {hostname}:{port}")
 
-    # Wait for client connections
+    # Waits for client connections
     srv_sock.listen(5) 
     
 except Exception as e:
-    # Print the exception message
-    print(e)
-    # Exit safely with error
+    # Prints exception message and exits safely
+    print(f"Failure -> Error: {e}")
     exit(1)
+
+
+############# REQUEST PROCESSING #############
+
 
 while True:
     try:
@@ -40,6 +43,7 @@ while True:
         cli_sock, cli_addr = srv_sock.accept()
         print(f"Client {cli_addr} connected.")
 
+        # Receives client's request
         client_data = bytearray()
         while True:
             data = cli_sock.recv(1024)
@@ -61,32 +65,72 @@ while True:
         if choice == "list":
             send_listing(cli_sock, cli_addr)
 
+            # Check that client successfully received directory list
+            client_status = (cli_sock.recv(1024).decode()).split(",")
+            if client_status[0] == "Success":
+                print(status_message("Success", cli_addr, choice))
+            else:
+                print(status_message("Failure", cli_addr, choice, client_status[1]))
+
+
         # "get" argument downloads file
         elif choice == "get":
-            filename = str(choice_list[1])
 
-            # Check if file exists
+            # Receives whether or not file already exists in client directory
+            client_status = (cli_sock.recv(1024).decode()).split(",")
+            if client_status[0] == "Failure":
+                raise Exception(status_message("Failure", cli_addr, choice, filename, client_status[1]))
+
+            # Checks if file exists in server directory
             if filename not in os.listdir():  
-                raise Exception(f"File {filename} failed to send to the client {cli_addr} as it was not found.")
+                cli_sock.sendall(str.encode("Failure,File does not exist in server directory."))
+                raise Exception(status_message("Failure", cli_addr, choice, filename, "File does not exist in server directory."))
+            
+            # Sends go ahead to client to 
+            cli_sock.sendall(str.encode("Success,"))
+
+            # Checks if send was successful
+            send_status = send_file(cli_sock, filename, cli_addr)
+            if not send_status[0]:
+                raise Exception(status_message("Failure", cli_addr, choice, filename, send_status[1]))
+
+            # Checks that client has successfully received file
+            client_status = (cli_sock.recv(1024).decode()).split(",")
+            if client_status[0] == "Success":
+                print(status_message("Success", cli_addr, choice, filename))
             else:
-                send_file(cli_sock, filename, cli_addr)
+                print(status_message("Failure", cli_addr, choice, filename, client_status[1]))
+
 
         # "put" argument uploads file
         elif choice == "put":
-            filename = str(choice_list[1])
 
-            # Check if file already exists
+            # Receives whether or not file exists in client directory
+            client_status = (cli_sock.recv(1024).decode()).split(",")
+            if client_status[0] == "Failure":
+                raise Exception(status_message("Failure", cli_addr, choice, filename, client_status[1]))
+
+            # Check if file already exists in server directory
             if filename in os.listdir(): 
-                raise Exception(f"File {filename} failed to download from the client {cli_addr} as that file already exists.")
+                cli_sock.sendall(str.encode(("Failure,File already exists in the server directory.")))
+                raise Exception(status_message("Failure", cli_addr, choice, filename, "File already exists in server directory."))
+
+            # Sends go ahead to client to send file
+            cli_sock.sendall(str.encode("Success,"))
+
+            # Checks if receive was successful and informs client
+            recv_status = recv_file(cli_sock, filename, cli_addr)
+            if recv_status[0]:
+                cli_sock.sendall(str.encode("Success,"))
+                print(status_message("Success", cli_addr, choice, filename))
             else:
-                recv_file(cli_sock, filename, cli_addr)
+                cli_sock.sendall(str.encode(f"Failure,{recv_status[1]}"))
+                raise Exception(status_message("Failure", cli_addr, choice, filename, recv_status[1]))
 
-
-    # Catchall exception in case of larger error
     except Exception as e:
         print(e)  
 
-    # Close client connection
+    # Closes client connection
     finally:
         # Ensures a client socket exists before closing it
         if "cli_sock" in locals():
