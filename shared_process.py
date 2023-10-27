@@ -1,5 +1,16 @@
 import os 
 
+def valid_filename(name): 
+    if "." not in name:
+        print("No file extension found.")
+        return False
+    elif len(name) > 50:
+        print("File name too long. Are you sure this is right?")
+        return False
+    
+    return True
+
+
 # Read file with given filename and send data over network via provided socket
 def send_file(socket, filename, addr):
     try:
@@ -7,14 +18,14 @@ def send_file(socket, filename, addr):
             data = file.read()
             socket.sendall(data)
 
-        print(f"File {filename} successfully uploaded to {addr}.")
+        print(f"File {filename} successfully sent to {addr}.")
 
     except BrokenPipeError:
-        print(f"Connection broken to {addr} so upload failed.")
+        print(f"Connection broken to {addr} so send failed.")
 
     except Exception as e:
         print(e)
-        print(f"File {filename} failed to upload to {addr}.")
+        print(f"File {filename} failed to send to {addr}.")
 
 
 # Create file with given filename and write to it data received via provided socket
@@ -38,7 +49,7 @@ def recv_file(socket, filename, addr):
 
     except Exception as e:
         print(e)
-        print(f"File {filename} failed to download from {addr}.")
+        print(f"File {filename} failed to download from {addr}. Make sure the file exists.")
 
 
 # Generate and send directory listing from server to client via provided socket
@@ -46,22 +57,23 @@ def send_listing(socket, addr):
     try:
         dir_contents_list = os.listdir()
         dir_contents_str = "\n".join(dir_contents_list)
+        print(dir_contents_str)
         socket.sendall(str.encode(dir_contents_str))
         print(f"First level directory contents from the server successfully returned to client {addr}.")
 
+    except Exception as e:
+        print(e)
+        print(f"First level directory contents from the server failed to send to client {addr}.")    
+
+# Recieve listing from server via provided socket and print it
+def recv_listing(socket, addr):
+    try:
+        data = socket.recv(4096)
+        directory_list = data.decode()
+        print("\nContents of directory: ")
+        print(directory_list)
+        print(f"\nFirst level directory contents from the server {addr} successfully returned to client.")
 
     except Exception as e:
         print(e)
-        print(f"First level directory contents from the server unsuccessfully sent to client {addr}.")    
-
-# Recieve listing from server via provided socket and print it
-def recv_listing(socket):
-    try:
-        dir_listing = socket.recv(4096)
-        dir_listing = "\n".join(dir_listing)
-        print("\nContents of directory: ")
-        print(dir_listing)
-        print(f"\nFirst level directory contents from the server {hostname}:{port} successfully returned to client.")
-
-    except Exception as e:
-            print(e)
+        print(f"First level directory contents from the server failed to sent to client {addr}.")    
